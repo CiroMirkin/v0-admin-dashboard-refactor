@@ -1,0 +1,81 @@
+'use client'
+
+import { useState, useMemo, useCallback } from 'react'
+import useSWR from 'swr'
+import { AdminTopbar } from '@/components/admin/admin-topbar'
+import { OrdersFilters } from '@/components/admin/orders/orders-filters'
+import { OrdersDataTable } from '@/components/admin/orders/orders-data-table'
+import { adminOrdersApi } from '@/lib/api/adminOrders'
+import type { PaymentStatus, OrderStatus, OrderWithCustomer } from '@/lib/types'
+
+export default function OrdersPage() {
+  const [search, setSearch] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | 'all'>('all')
+  const [orderStatus, setOrderStatus] = useState<OrderStatus | 'all'>('all')
+
+  // Fetch orders from API
+  const { data: orders, isLoading, mutate } = useSWR<OrderWithCustomer[]>(
+    '/admin/orders',
+    () => adminOrdersApi.list()
+  )
+
+  const handleOrderUpdate = useCallback(() => {
+    mutate()
+  }, [mutate])
+
+  const filteredOrders = useMemo(() => {
+    if (!orders) return []
+
+    return orders.filter((order) => {
+      // Search filter
+      if (search) {
+        const searchLower = search.toLowerCase()
+        const matchesSearch =
+          order.order_number.toLowerCase().includes(searchLower) ||
+          order.customer.name.toLowerCase().includes(searchLower) ||
+          order.customer.email.toLowerCase().includes(searchLower)
+        if (!matchesSearch) return false
+      }
+
+      // Payment status filter
+      if (paymentStatus !== 'all' && order.payment_status !== paymentStatus) {
+        return false
+      }
+
+      // Order status filter
+      if (orderStatus !== 'all' && order.order_status !== orderStatus) {
+        return false
+      }
+
+      return true
+    })
+  }, [orders, search, paymentStatus, orderStatus])
+
+  const handleReset = () => {
+    setSearch('')
+    setPaymentStatus('all')
+    setOrderStatus('all')
+  }
+
+  return (
+    <>
+      <AdminTopbar title="Pedidos" />
+      <main className="p-4 lg:p-6 space-y-6">
+        <OrdersFilters
+          search={search}
+          onSearchChange={setSearch}
+          paymentStatus={paymentStatus}
+          onPaymentStatusChange={setPaymentStatus}
+          orderStatus={orderStatus}
+          onOrderStatusChange={setOrderStatus}
+          onReset={handleReset}
+        />
+        <OrdersDataTable 
+          orders={filteredOrders} 
+          onOrderUpdate={handleOrderUpdate}
+          isLoading={isLoading}
+        />
+      </main>
+    </>
+  )
+}
