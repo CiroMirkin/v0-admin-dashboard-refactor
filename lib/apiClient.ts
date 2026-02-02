@@ -65,7 +65,8 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   if (response.status === 401) {
     clearToken()
     if (typeof window !== 'undefined') {
-      window.location.href = ROUTE_ADMIN_LOGIN
+      // Use Next.js router compatible redirect
+      window.location.replace(ROUTE_ADMIN_LOGIN)
     }
     throw new ApiError('No autorizado', 401)
   }

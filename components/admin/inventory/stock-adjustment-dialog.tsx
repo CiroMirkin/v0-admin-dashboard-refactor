@@ -25,7 +25,7 @@ import {
 import type { ProductWithImages } from '@/lib/types'
 import { toast } from 'sonner'
 import { adminProductsApi } from '@/lib/api/adminProducts'
-import { ApiError } from '@/lib/api/apiFetch'
+import { ApiError } from '@/lib/apiClient'
 
 interface StockAdjustmentDialogProps {
   product: ProductWithImages | null
