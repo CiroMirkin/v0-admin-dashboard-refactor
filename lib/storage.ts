@@ -7,6 +7,12 @@ export function getToken(): string | null {
   return localStorage.getItem(ACCESS_TOKEN_KEY)
 }
 
+export function isTokenAvailable(): boolean {
+  if (typeof window === 'undefined') return false
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY)
+  return !!token
+}
+
 export function setToken(token: string, tokenType?: string, expiresIn?: number): void {
   if (typeof window === 'undefined') return
   

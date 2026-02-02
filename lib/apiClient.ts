@@ -27,12 +27,14 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     ...customHeaders,
   }
 
-  // Add Authorization header if auth is required and token exists
+  // Add Authorization header if auth is required
   if (auth) {
     const token = getToken()
-    if (token) {
-      ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+    if (!token) {
+      console.error('❌ API Error: Authentication required but no token available')
+      throw new ApiError('Token de autenticación no disponible', 401)
     }
+    ;(headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
   }
 
   // Handle body

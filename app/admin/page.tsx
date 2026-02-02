@@ -8,11 +8,12 @@ import { RecentOrdersTable } from '@/components/admin/dashboard/recent-orders-ta
 import { adminOrdersApi } from '@/lib/api/adminOrders'
 import type { OrderWithCustomer } from '@/lib/types'
 import { Skeleton } from '@/components/ui/skeleton'
+import { isTokenAvailable } from '@/lib/storage'
 
 export default function AdminDashboardPage() {
-  // Fetch orders from API
+  // Only fetch orders if token is available
   const { data: orders, isLoading, error } = useSWR<OrderWithCustomer[]>(
-    '/admin/orders',
+    isTokenAvailable() ? '/admin/orders' : null,
     () => adminOrdersApi.list(),
     {
       revalidateOnFocus: false,

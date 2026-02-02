@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { login } from '@/lib/auth'
-import { getToken } from '@/lib/storage'
+import { getToken, isTokenAvailable } from '@/lib/storage'
 import { ROUTE_ADMIN_DASHBOARD } from '@/lib/routes'
 
 export default function AdminLoginPage() {
@@ -49,15 +49,20 @@ export default function AdminLoginPage() {
       
       console.log('✅ Login exitoso, verificando token...')
       
-      // Verificación inmediata del token
-      const token = localStorage.getItem('access_token')
-      console.log('🔍 Token después de login:', token ? 'EXISTS' : 'MISSING')
+      // Pequeño delay para asegurar localStorage sincronización
+      await new Promise(resolve => setTimeout(resolve, 100))
       
-      if (token) {
+      // Verificación robusta del token
+      const token = getToken()
+      const isAvailable = isTokenAvailable()
+      console.log('🔍 Token después de login:', token ? 'EXISTS' : 'MISSING')
+      console.log('🔍 isTokenAvailable():', isAvailable)
+      
+      if (token && isAvailable) {
         console.log('🔄 Redirigiendo a:', nextUrl)
         router.replace(nextUrl)
       } else {
-        throw new Error('Token no guardado correctamente')
+        throw new Error('Token no guardado correctamente o no disponible')
       }
       
     } catch (err) {
