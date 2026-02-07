@@ -133,3 +133,25 @@ NEXT_PUBLIC_ADMIN_EMAIL=admin@yourdomain.com
 ```
 
 **Nota:** Las variables de servicio (`SUPABASE_*`) se utilizan para operaciones administrativas en el servidor, mientras que las variables públicas (`NEXT_PUBLIC_*`) se usan en el cliente.
+
+## 🚀 Deploy y Gestión de Dependencias
+
+Para información detallada sobre deploy, gestión de dependencias y solución de problemas comunes, consulta:
+
+**[📋 Guía de Deploy y Dependencias](./DEPLOY.md)**
+
+### Resumen Rápido
+
+**Siempre actualiza el lockfile después de modificar `package.json`:**
+```bash
+pnpm install
+git add pnpm-lock.yaml
+git commit -m "fix: actualizar lockfile"
+```
+
+**Variables de entorno requeridas en Vercel:**
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_ADMIN_EMAIL`
