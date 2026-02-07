@@ -71,7 +71,7 @@ export const useProducts = () => {
         .from('products')
         .select(`
           *,
-          product_media(id, url, is_primary, type, order, created_at)
+          product_media(id, url, is_primary, type, order)
         `)
         .order('created_at', { ascending: false })
       

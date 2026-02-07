@@ -30,20 +30,6 @@ export default function ProductsPage() {
     refetch()
   }, [refetch])
 
-  if (error) {
-    return (
-      <>
-        <AdminTopbar title="Productos" />
-        <main className="p-4 lg:p-6">
-          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-6 text-center">
-            <h3 className="text-lg font-semibold text-destructive mb-2">Error al cargar productos</h3>
-            <p className="text-muted-foreground">No se pudieron cargar los productos. Intenta recargar la página.</p>
-          </div>
-        </main>
-      </>
-    )
-  }
-
   const featuredCount = useMemo(() => {
     return products?.filter((p) => p.is_featured).length ?? 0
   }, [products])
@@ -59,6 +45,20 @@ export default function ProductsPage() {
         (product.description && product.description.toLowerCase().includes(searchLower))
     )
   }, [products, search])
+
+  if (error) {
+    return (
+      <>
+        <AdminTopbar title="Productos" />
+        <main className="p-4 lg:p-6">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-6 text-center">
+            <h3 className="text-lg font-semibold text-destructive mb-2">Error al cargar productos</h3>
+            <p className="text-muted-foreground">No se pudieron cargar los productos. Intenta recargar la página.</p>
+          </div>
+        </main>
+      </>
+    )
+  }
 
   const isAtLimit = featuredCount >= MAX_FEATURED_PRODUCTS
 
