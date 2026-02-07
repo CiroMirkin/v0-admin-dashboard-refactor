@@ -18,6 +18,21 @@ export default function AdminDashboardPage() {
   // Fetch orders from API
   const { data: orders, isLoading, error } = useOrders()
 
+  // Calculate stats from orders
+  const stats = useMemo(() => {
+    if (!orders) {
+      return { newOrders: 0, pendingPayment: 0, pendingShipment: 0 }
+    }
+
+    return {
+      newOrders: orders.filter((o) => o.order_status === 'new').length,
+      pendingPayment: orders.filter((o) => o.payment_status === 'pending').length,
+      pendingShipment: orders.filter(
+        (o) => o.payment_status === 'paid' && o.order_status !== 'shipped' && o.order_status !== 'delivered'
+      ).length,
+    }
+  }, [orders])
+
   // Redirect if not authenticated
   if (!loading && !isAuthenticated) {
     router.replace('/admin/login')
@@ -36,23 +51,6 @@ export default function AdminDashboardPage() {
       </>
     )
   }
-
-
-
-  // Calculate stats from orders
-  const stats = useMemo(() => {
-    if (!orders) {
-      return { newOrders: 0, pendingPayment: 0, pendingShipment: 0 }
-    }
-
-    return {
-      newOrders: orders.filter((o) => o.order_status === 'new').length,
-      pendingPayment: orders.filter((o) => o.payment_status === 'pending').length,
-      pendingShipment: orders.filter(
-        (o) => o.payment_status === 'paid' && o.order_status !== 'shipped' && o.order_status !== 'delivered'
-      ).length,
-    }
-  }, [orders])
 
   if (isLoading) {
     return (
