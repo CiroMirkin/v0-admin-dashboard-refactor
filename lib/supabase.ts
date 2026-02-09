@@ -40,6 +40,8 @@ export type Database = {
           price: number
           stock: number
           status: 'active' | 'paused'
+          is_featured: boolean
+          featured_at: string | null
           created_at: string
         }
         Insert: {
@@ -49,6 +51,8 @@ export type Database = {
           price: number
           stock?: number
           status?: 'active' | 'paused'
+          is_featured?: boolean
+          featured_at?: string | null
         }
         Update: {
           id?: string
@@ -57,6 +61,8 @@ export type Database = {
           price?: number
           stock?: number
           status?: 'active' | 'paused'
+          is_featured?: boolean
+          featured_at?: string | null
         }
       }
       product_media: {

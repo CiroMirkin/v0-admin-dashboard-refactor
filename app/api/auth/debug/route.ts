@@ -7,10 +7,21 @@ export async function GET() {
     
     // Test 1: Check if we can connect to users table
     console.log('🔍 Test 1: Checking users table access...')
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, email, role, is_active, password_hash')
-      .eq('email', 'roma_descartables@hotmail.com')
+    /*AQUI CONECTAR*/
+    // const { data: users, error: usersError } = await supabase
+    //   .from('users')
+    //   .select('id, email, role, is_active, password_hash')
+    //   .eq('email', 'roma_descartables@hotmail.com')
+    
+    // Mock debug response - reemplazar con llamada real
+    const users = [{
+      id: 'mock-user-id',
+      email: 'roma_descartables@hotmail.com',
+      role: 'admin',
+      is_active: true,
+      password_hash: 'mock-hash'
+    }]
+    const usersError = null
     
     if (usersError) {
       console.error('❌ Users table error:', usersError)
@@ -40,22 +51,32 @@ export async function GET() {
     
     // Test 2: Check if check_password_crypt function exists
     console.log('🔍 Test 2: Checking check_password_crypt function...')
-    const { data: funcExists, error: funcError } = await supabase
-      .rpc('check_password_crypt', {
-        email_input: 'roma_descartables@hotmail.com',
-        password_input: 'admin123'
-      })
+    /*AQUI CONECTAR*/
+    // const { data: funcExists, error: funcError } = await supabase
+    //   .rpc('check_password_crypt', {
+    //     email_input: 'roma_descartables@hotmail.com',
+    //     password_input: 'admin123'
+    //   })
+    
+    // Mock function result - reemplazar con llamada real
+    const funcExists = true
+    const funcError = null
     
     if (funcError) {
       console.error('❌ verify_password function error:', funcError)
       
       // Test 3: Try direct password verification
       console.log('🔍 Test 3: Trying direct SQL verification...')
-      const { data: directTest, error: directError } = await supabase
-        .from('users')
-        .select('crypt(\'admin123\', password_hash) = password_hash as password_match')
-        .eq('email', 'roma_descartables@hotmail.com')
-        .single()
+      /*AQUI CONECTAR*/
+      // const { data: directTest, error: directError } = await supabase
+      //   .from('users')
+      //   .select('crypt(\'admin123\', password_hash) = password_hash as password_match')
+      //   .eq('email', 'roma_descartables@hotmail.com')
+      //   .single()
+      
+      // Mock direct verification - reemplazar con llamada real
+      const directTest = { password_match: true }
+      const directError = null
       
       if (directError) {
         console.error('❌ Direct verification error:', directError)

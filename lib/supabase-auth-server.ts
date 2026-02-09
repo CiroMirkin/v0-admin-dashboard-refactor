@@ -25,15 +25,25 @@ export async function adminLogin(email: string, password: string) {
   }
   
   try {
-    // Query the custom users table
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, email, password_hash, role, is_active')
-      .eq('email', email)
-      .single()
+// Query the custom users table
+    /*AQUI CONECTAR*/
+    // const { data: user, error } = await supabase
+    //   .from('users')
+    //   .select('id, email, password_hash, role, is_active')
+    //   .eq('email', email)
+    //   .single()
     
-    if (error || !user) {
-      console.error('User not found:', error)
+    // Mock user data - reemplazar con llamada real
+    const user = {
+      id: 'mock-user-id',
+      email: email,
+      password_hash: 'mock-hash',
+      role: 'admin',
+      is_active: true
+    }
+    
+    if (!user) {
+      console.error('User not found')
       throw new Error('Credenciales inválidas')
     }
     
@@ -42,23 +52,24 @@ export async function adminLogin(email: string, password: string) {
     }
     
     // Verify password using raw SQL query with PostgreSQL crypt() function
-    const { data: authResult, error: verifyError } = await supabase
-      .rpc('check_password_crypt', {
-        email_input: email,
-        password_input: password
-      })
+    /*AQUI CONECTAR*/
+    // const { data: authResult, error: verifyError } = await supabase
+    //   .rpc('check_password_crypt', {
+    //     email_input: email,
+    //     password_input: password
+    //   })
     
-    const passwordMatch = authResult === true
+// Mock password verification - reemplazar con llamada real
+    const mockAuthResult = password === 'admin123' ? true : false
+    const mockVerifyError = null
     
-    if (verifyError || !passwordMatch) {
-      console.error('Password verification failed:', verifyError || 'Password mismatch')
+    const passwordMatch = mockAuthResult === true
+    
+    if (mockVerifyError || !passwordMatch) {
+      console.error('Password verification failed:', mockVerifyError || 'Password mismatch')
       throw new Error('Credenciales inválidas')
     }
     
-    if (verifyError || !passwordMatch) {
-      console.error('Password verification failed:', verifyError || 'Password mismatch')
-      throw new Error('Credenciales inválidas')
-    }
     
     // Create custom session token (simple JWT-like token)
     const token = btoa(JSON.stringify({
@@ -124,15 +135,28 @@ export async function getAdminSession(): Promise<AuthSession | null> {
         return null
       }
       
-      // Verify user still exists and is active
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('id, email, role, is_active')
-        .eq('id', decoded.userId)
-        .eq('is_active', true)
-        .single()
+// Verify user still exists and is active
+      /*AQUI CONECTAR*/
+      // const { data: user, error } = await supabase
+      //   .from('users')
+      //   .select('id, email, role, is_active')
+      //   .eq('id', decoded.userId)
+      //   .eq('is_active', true)
+      //   .single()
+       
+      // if (error || !user) {
+      //   return null
+      // }
       
-      if (error || !user) {
+      // Mock user validation - reemplazar con llamada real
+      const user = {
+        id: decoded.userId,
+        email: decoded.email,
+        role: decoded.role,
+        is_active: true
+      }
+      
+      if (!user) {
         return null
       }
       

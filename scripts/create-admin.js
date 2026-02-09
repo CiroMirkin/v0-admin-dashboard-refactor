@@ -20,10 +20,15 @@ async function createAdminUser() {
   
   try {
     // Try to sign up the admin user
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    /*AQUI CONECTAR*/
+    // const { data, error } = await supabase.auth.signUp({
+    //   email,
+    //   password,
+    // })
+    
+    // Mock user creation - reemplazar con llamada real
+    const data = { user: { id: 'mock-user-id' } }
+    const error = null
     
     if (error) {
       console.error('Error creating user:', error)
@@ -34,10 +39,14 @@ async function createAdminUser() {
     
     // Update user to confirm email using admin client
     if (data.user?.id) {
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        data.user.id,
-        { email_confirm: true }
-      )
+      /*AQUI CONECTAR*/
+      // const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      //   data.user.id,
+      //   { email_confirm: true }
+      // )
+      
+      // Mock email confirmation - reemplazar con llamada real
+      const updateError = null
       
       if (updateError) {
         console.error('Error confirming email:', updateError)
@@ -48,10 +57,15 @@ async function createAdminUser() {
     }
     
     // Try to sign in
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    /*AQUI CONECTAR*/
+    // const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    //   email,
+    //   password,
+    // })
+    
+    // Mock sign in - reemplazar con llamada real
+    const signInData = { user: { id: 'mock-user-id', email: email } }
+    const signInError = null
     
     if (signInError) {
       console.error('Error signing in:', signInError)

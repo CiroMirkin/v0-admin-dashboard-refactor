@@ -19,7 +19,12 @@ async function confirmAdminUser() {
   
   try {
     // Get user by email
-    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+    /*AQUI CONECTAR*/
+    // const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+    
+    // Mock users list - reemplazar con llamada real
+    const users = [{ id: 'mock-user-id', email: email }]
+    const listError = null
     
     if (listError) {
       console.error('Error listing users:', listError)
@@ -36,10 +41,14 @@ async function confirmAdminUser() {
     console.log('Found admin user:', adminUser.id)
     
     // Update user to confirm email
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      adminUser.id,
-      { email_confirm: true }
-    )
+    /*AQUI CONECTAR*/
+    // const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+    //   adminUser.id,
+    //   { email_confirm: true }
+    // )
+    
+    // Mock email confirmation - reemplazar con llamada real
+    const updateError = null
     
     if (updateError) {
       console.error('Error confirming email:', updateError)
@@ -49,10 +58,15 @@ async function confirmAdminUser() {
     console.log('Email confirmed successfully')
     
     // Try to sign in
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password: 'admin123',
-    })
+    /*AQUI CONECTAR*/
+    // const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    //   email,
+    //   password: 'admin123',
+    // })
+    
+    // Mock sign in - reemplazar con llamada real
+    const signInData = { session: { user: { email: email } } }
+    const signInError = null
     
     if (signInError) {
       console.error('Error signing in:', signInError)

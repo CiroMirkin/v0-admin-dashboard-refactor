@@ -74,6 +74,7 @@ export function ProductsDataTable({
 
   const deleteProduct = useDeleteProduct()
   const setFeaturedProduct = useSetFeaturedProduct()
+  const updateProduct = useUpdateProduct()
   
   const handleDelete = () => {
     if (!deletingProduct) return
@@ -98,7 +99,14 @@ export function ProductsDataTable({
     setLoading(productId, 'publish', true)
 
     try {
-      // handled by React Query mutation
+      // ← AGREGAR LLAMADA REAL A LA BASE DE DATOS
+      await updateProduct.mutateAsync({
+        id: productId,
+        data: {
+          status: newStatus ? 'active' : 'paused'
+        }
+      })
+      
       toast.success(newStatus ? 'Producto publicado' : 'Producto oculto')
       onProductUpdate()
     } catch (error) {
@@ -109,11 +117,8 @@ export function ProductsDataTable({
         return next
       })
       
-      if (error instanceof Error) {
-        toast.error('Error al actualizar el producto')
-      } else {
-        toast.error('Error de conexión')
-      }
+      toast.error('Error al cambiar estado del producto')
+      console.error('Toggle published error:', error)
     } finally {
       setLoading(productId, 'publish', false)
     }

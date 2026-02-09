@@ -11,6 +11,8 @@ type SupabaseProduct = {
   price: number
   stock: number
   status: 'active' | 'paused'
+  is_featured: boolean
+  featured_at: string | null
   created_at: string
 }
 
@@ -48,7 +50,7 @@ const transformProduct = (product: SupabaseProduct, media: SupabaseProductMedia[
   price: product.price,
   stock: product.stock,
   is_published: product.status === 'active',
-  is_featured: false,
+  is_featured: product.is_featured || false,
   created_at: product.created_at,
   updated_at: null,
   images: media.map(m => ({
@@ -67,6 +69,7 @@ export const useProducts = () => {
   return useQuery({
     queryKey: ['products'],
     queryFn: async (): Promise<ProductWithImages[]> => {
+      /*AQUI CONECTAR*/
       const { data: products, error } = await supabase
         .from('products')
         .select(`
@@ -94,6 +97,7 @@ export const useProduct = (id: string) => {
   return useQuery({
     queryKey: ['products', id],
     queryFn: async (): Promise<ProductWithImages | null> => {
+      /*AQUI CONECTAR*/
       const { data: product, error } = await supabase
         .from('products')
         .select(`
@@ -123,6 +127,7 @@ export const useCreateProduct = () => {
   
   return useMutation({
     mutationFn: async (data: CreateProductData): Promise<ProductWithImages> => {
+      /*AQUI CONECTAR*/
       const { data: product, error } = await supabase
         .from('products')
         .insert([data])
@@ -152,20 +157,22 @@ export const useUpdateProduct = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: UpdateProductData }): Promise<ProductWithImages> => {
+mutationFn: async ({ id, data }: { id: string; data: UpdateProductData }): Promise<ProductWithImages> => {
+      /*AQUI CONECTAR*/
       const { data: product, error } = await supabase
         .from('products')
         .update(data)
         .eq('id', id)
         .select()
         .single()
-      
+       
       if (error) {
         console.error('Error updating product:', error)
         throw new Error('Error al actualizar producto')
       }
-      
+       
       // Get media for complete product
+      /*AQUI CONECTAR*/
       const { data: media } = await supabase
         .from('product_media')
         .select('*')
@@ -191,6 +198,7 @@ export const useDeleteProduct = () => {
   
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
+      /*AQUI CONECTAR*/
       const { error } = await supabase
         .from('products')
         .delete()
@@ -217,20 +225,22 @@ export const useUpdateStock = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ id, stock }: { id: string; stock: number }): Promise<ProductWithImages> => {
+mutationFn: async ({ id, stock }: { id: string; stock: number }): Promise<ProductWithImages> => {
+      /*AQUI CONECTAR*/
       const { data: product, error } = await supabase
         .from('products')
         .update({ stock })
         .eq('id', id)
         .select()
         .single()
-      
+       
       if (error) {
         console.error('Error updating stock:', error)
         throw new Error('Error al actualizar stock')
       }
-      
+       
       // Get media for complete product
+      /*AQUI CONECTAR*/
       const { data: media } = await supabase
         .from('product_media')
         .select('*')
@@ -256,18 +266,29 @@ export const useSetFeaturedProduct = () => {
   
   return useMutation({
     mutationFn: async ({ id, featured }: { id: string; featured: boolean }): Promise<void> => {
-      // TODO: Implement featured logic in database schema
-      // For now, just simulate success
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const updateData = featured 
+        ? { is_featured: true, featured_at: new Date().toISOString() }
+        : { is_featured: false, featured_at: null }
       
-      if (featured) {
+      /*AQUI CONECTAR*/
+      const { error } = await supabase
+        .from('products')
+        .update(updateData)
+        .eq('id', id)
+      
+      if (error) {
+        console.error('Error setting featured product:', error)
+        throw new Error('Error al actualizar producto destacado')
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      
+      if (variables.featured) {
         toast.success('Producto marcado como destacado')
       } else {
         toast.success('Producto ya no está destacado')
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (error) => {
       if (error instanceof Error && error.message.includes('límite')) {
@@ -348,6 +369,7 @@ export const useOrders = () => {
   return useQuery({
     queryKey: ['orders'],
     queryFn: async (): Promise<OrderWithCustomer[]> => {
+      /*AQUI CONECTAR*/
       const { data: orders, error } = await supabase
         .from('orders')
         .select(`
@@ -375,6 +397,7 @@ export const useOrder = (id: string) => {
   return useQuery({
     queryKey: ['orders', id],
     queryFn: async (): Promise<OrderWithCustomer | null> => {
+      /*AQUI CONECTAR*/
       const { data: order, error } = await supabase
         .from('orders')
         .select(`
@@ -404,6 +427,7 @@ export const useMarkOrderAsPaid = () => {
   
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
+      /*AQUI CONECTAR*/
       const { error } = await supabase
         .from('orders')
         .update({ payment_method: 'paid' })
@@ -431,6 +455,7 @@ export const useMarkOrderAsShipped = () => {
   
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
+      /*AQUI CONECTAR*/
       const { error } = await supabase
         .from('orders')
         .update({ current_status: 'shipped' })
