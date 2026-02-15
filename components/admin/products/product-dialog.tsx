@@ -22,6 +22,7 @@ import {
   useUpdateProduct, 
   useSetFeaturedProduct 
 } from '@/lib/supabase-services'
+import { useUploadMedia } from '@/lib/media-services'
 
 const MAX_FEATURED_PRODUCTS = 10
 
@@ -50,12 +51,15 @@ export function ProductDialog({
   const [isFeaturedLoading, setIsFeaturedLoading] = useState(false)
   const [pendingFeatured, setPendingFeatured] = useState(false)
   const [images, setImages] = useState<ProductImage[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const isEditing = !!product
 
   // React Query hooks
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
   const setFeaturedProduct = useSetFeaturedProduct()
+  const uploadMedia = useUploadMedia()
 
   useEffect(() => {
     if (!product || !open) {
@@ -162,22 +166,56 @@ export function ProductDialog({
     )
   }
 
-  const handleAddImage = async () => {
+  const handleAddImage = () => {
     if (!isEditing || !product) {
       toast.error('Primero guarda el producto para agregar imágenes')
       return
     }
 
-    const newImage: ProductImage = {
-      id: Math.random().toString(),
-      product_id: product.id,
-      image_url: '/placeholder.svg?height=200&width=200',
-      is_primary: images.length === 0,
-      created_at: new Date().toISOString(),
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !product) return
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Solo se permiten archivos de imagen')
+      return
     }
-    
-    setImages([...images, newImage])
-    toast.success('Imagen agregada')
+
+    // Validar tamaño (max 8MB)
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('El archivo no debe superar los 8MB')
+      return
+    }
+
+    setIsUploading(true)
+
+    try {
+      await uploadMedia.mutateAsync({
+        productId: product.id,
+        data: {
+          file,
+          type: 'image',
+          is_primary: images.length === 0,
+          order: images.length
+        }
+      })
+
+      toast.success('Imagen subida exitosamente')
+      onProductUpdate?.()
+    } catch (error) {
+      toast.error('Error al subir la imagen')
+      console.error('Upload error:', error)
+    } finally {
+      setIsUploading(false)
+      // Limpiar el input para permitir subir el mismo archivo nuevamente
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
   }
 
   const handleRemoveImage = async (imageId: string) => {
@@ -335,15 +373,23 @@ export function ProductDialog({
                 </div>
               )}
               
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+              />
+
               {isEditing && (
                 <Button
                   type="button"
                   onClick={handleAddImage}
-                  disabled={isSaving}
+                  disabled={isSaving || isUploading || uploadMedia.isPending}
                   className="w-full"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  Agregar Imagen
+                  {isUploading || uploadMedia.isPending ? 'Subiendo...' : 'Agregar Imagen'}
                 </Button>
               )}
               
