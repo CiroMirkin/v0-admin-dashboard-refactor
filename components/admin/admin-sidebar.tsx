@@ -2,14 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, ShoppingCart, Package, Boxes, Menu, X, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, Boxes, Menu, X, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { adminLogout } from '@/lib/supabase-auth'
 import { 
   ROUTE_ADMIN_DASHBOARD, 
-  ROUTE_ADMIN_ORDERS, 
   ROUTE_ADMIN_PRODUCTS, 
   ROUTE_ADMIN_INVENTORY,
   ROUTE_ADMIN_LOGIN 
@@ -17,7 +16,6 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: ROUTE_ADMIN_DASHBOARD, icon: LayoutDashboard },
-  { name: 'Pedidos', href: ROUTE_ADMIN_ORDERS, icon: ShoppingCart },
   { name: 'Productos', href: ROUTE_ADMIN_PRODUCTS, icon: Package },
   { name: 'Inventario', href: ROUTE_ADMIN_INVENTORY, icon: Boxes },
 ]
@@ -81,9 +79,7 @@ export function AdminSidebar() {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 px-3 py-4">
-            {navigation
-              .filter((item) => item.name !== 'Pedidos')
-              .map((item) => {
+            {navigation.map((item) => {
                 const active = isActive(item.href)
                 return (
                   <Link
