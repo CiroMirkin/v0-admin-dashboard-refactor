@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { ProductWithImages, ProductImage } from '@/lib/types'
+import type { ProductWithImages, ProductImage, ProductVariant } from '@/lib/types'
 import { toast } from 'sonner'
 import { 
   useCreateProduct, 
@@ -23,6 +23,11 @@ import {
   useSetFeaturedProduct 
 } from '@/lib/supabase-services'
 import { useUploadMedia } from '@/lib/media-services'
+import { 
+  useUpdateProductVariants,
+  useDeleteAllVariants 
+} from '@/lib/variant-services'
+import { ProductVariantsForm } from './product-variants-form'
 
 const MAX_FEATURED_PRODUCTS = 10
 
@@ -52,6 +57,11 @@ export function ProductDialog({
   const [pendingFeatured, setPendingFeatured] = useState(false)
   const [images, setImages] = useState<ProductImage[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  
+  const [hasVariants, setHasVariants] = useState(false)
+  const [variants, setVariants] = useState<ProductVariant[]>([])
+  const [hasVariantErrors, setHasVariantErrors] = useState(false)
+  
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const isEditing = !!product
 
@@ -60,6 +70,8 @@ export function ProductDialog({
   const updateProduct = useUpdateProduct()
   const setFeaturedProduct = useSetFeaturedProduct()
   const uploadMedia = useUploadMedia()
+  const updateVariants = useUpdateProductVariants()
+  const deleteAllVariants = useDeleteAllVariants()
 
   useEffect(() => {
     if (!product || !open) {
@@ -71,6 +83,8 @@ export function ProductDialog({
       setIsFeatured(false)
       setPendingFeatured(false)
       setImages([])
+      setHasVariants(false)
+      setVariants([])
       return
     }
 
@@ -81,6 +95,12 @@ export function ProductDialog({
     setIsPublished(product.is_published)
     setIsFeatured(product.is_featured)
     setImages(product?.images || [])
+    
+    // Load variants
+    const productVariants = product.variants || []
+    console.log('Product variants loaded:', productVariants.length, productVariants)
+    setHasVariants(productVariants.length > 0)
+    setVariants(productVariants.length > 0 ? [...productVariants] : [])
   }, [product, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,43 +111,100 @@ export function ProductDialog({
       return
     }
 
-    const priceNum = parseFloat(price)
-    if (isNaN(priceNum) || priceNum < 0) {
-      toast.error('El precio debe ser un número válido')
-      return
-    }
+    // Validate variants if enabled
+    if (hasVariants && variants.length > 0) {
+      const hasEmptyLabel = variants.some(v => !v.label.trim())
+      if (hasEmptyLabel) {
+        toast.error('Todas las variantes deben tener una etiqueta')
+        return
+      }
+      
+      const hasInvalidPrice = variants.some(v => isNaN(v.price) || v.price < 0)
+      if (hasInvalidPrice) {
+        toast.error('Todos los precios deben ser números válidos')
+        return
+      }
+      
+      const hasInvalidStock = variants.some(v => isNaN(v.stock) || v.stock < 0)
+      if (hasInvalidStock) {
+        toast.error('Todos los stocks deben ser números válidos')
+        return
+      }
+      
+      const hasDefault = variants.some(v => v.is_default)
+      if (!hasDefault && variants.length > 0) {
+        toast.error('Debes seleccionar una variante por defecto')
+        return
+      }
+      
+      // Check for duplicate labels
+      if (hasVariantErrors) {
+        toast.error('Hay etiquetas duplicadas en las variantes')
+        return
+      }
+    } else {
+      // Validate basic product fields when no variants
+      const priceNum = parseFloat(price)
+      if (isNaN(priceNum) || priceNum < 0) {
+        toast.error('El precio debe ser un número válido')
+        return
+      }
 
-    const stockNum = parseInt(stock)
-    if (isNaN(stockNum) || stockNum < 0) {
-      toast.error('El stock debe ser un número válido mayor o igual a 0')
-      return
+      const stockNum = parseInt(stock)
+      if (isNaN(stockNum) || stockNum < 0) {
+        toast.error('El stock debe ser un número válido mayor o igual a 0')
+        return
+      }
     }
 
     setIsSaving(true)
 
     try {
       if (isEditing) {
-        updateProduct.mutate({
+        // Update product
+        await updateProduct.mutateAsync({
           id: product!.id,
           data: {
             name: name.trim(),
             description: description.trim(),
-            price: priceNum,
-            stock: stockNum,
+            price: hasVariants && variants.length > 0 
+              ? variants.find(v => v.is_default)?.price || variants[0]?.price || 0
+              : parseFloat(price),
+            stock: hasVariants && variants.length > 0
+              ? variants.reduce((sum, v) => sum + v.stock, 0)
+              : parseInt(stock),
             status: isPublished ? 'active' : 'paused',
           }
         })
+        
+        // Handle variants update
+        if (hasVariants) {
+          await handleSaveVariants(product!.id)
+        } else if (product!.variants && product!.variants.length > 0) {
+          // Delete all variants if toggled off
+          await handleDeleteAllVariants(product!.id)
+        }
       } else {
-        createProduct.mutate({
+        // Create product first
+        const newProduct = await createProduct.mutateAsync({
           name: name.trim(),
           description: description.trim(),
-          price: priceNum,
-          stock: stockNum,
+          price: hasVariants && variants.length > 0 
+            ? variants.find(v => v.is_default)?.price || variants[0]?.price || 0
+            : parseFloat(price),
+          stock: hasVariants && variants.length > 0
+            ? variants.reduce((sum, v) => sum + v.stock, 0)
+            : parseInt(stock),
           status: isPublished ? 'active' : 'paused',
         })
         
-        if (pendingFeatured) {
-          // This will be handled by the createProduct success callback
+        // If product has variants, save them
+        if (hasVariants && variants.length > 0 && newProduct) {
+          await handleSaveVariants(newProduct.id)
+        }
+        
+        if (pendingFeatured && newProduct) {
+          setFeaturedProduct.mutate({ id: newProduct.id, featured: true })
         }
       }
 
@@ -143,6 +220,19 @@ export function ProductDialog({
       setIsSaving(false)
       setIsFeaturedLoading(false)
     }
+  }
+
+  const handleSaveVariants = async (productId: string) => {
+    // Use bulk update endpoint to save all variants
+    await updateVariants.mutateAsync({
+      productId,
+      variants: variants.map((v, i) => ({ ...v, sort_order: i }))
+    })
+  }
+
+  const handleDeleteAllVariants = async (productId: string) => {
+    // Use backend API to delete all variants
+    await deleteAllVariants.mutateAsync(productId)
   }
 
   const handleToggleFeatured = async () => {
@@ -243,7 +333,7 @@ export function ProductDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
+      <DialogContent className="!w-[70vw] !max-w-[70vw] max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Editar Producto' : 'Nuevo Producto'}
@@ -272,7 +362,9 @@ export function ProductDialog({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="price">Precio</Label>
+                  <Label htmlFor="price">
+                    Precio {!hasVariants && '*'}
+                  </Label>
                   <Input
                     id="price"
                     type="number"
@@ -281,14 +373,22 @@ export function ProductDialog({
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00"
-                    required
-                    disabled={isSaving}
+                    required={!hasVariants}
+                    disabled={isSaving || hasVariants}
+                    className={hasVariants ? 'bg-muted' : ''}
                   />
+                  {hasVariants && (
+                    <p className="text-xs text-muted-foreground">
+                      Precio definido por variantes
+                    </p>
+                  )}
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="stock">Stock</Label>
+                <Label htmlFor="stock">
+                  Stock {!hasVariants && '*'}
+                </Label>
                 <Input
                   id="stock"
                   type="number"
@@ -296,9 +396,15 @@ export function ProductDialog({
                   value={stock}
                   onChange={(e) => setStock(e.target.value)}
                   placeholder="0"
-                  required
-                  disabled={isSaving}
+                  required={!hasVariants}
+                  disabled={isSaving || hasVariants}
+                  className={hasVariants ? 'bg-muted' : ''}
                 />
+                {hasVariants && (
+                  <p className="text-xs text-muted-foreground">
+                    Stock definido por variantes
+                  </p>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -312,10 +418,18 @@ export function ProductDialog({
                   disabled={isSaving}
                 />
               </div>
-            </TabsContent>
-            
-            <TabsContent value="basic" className="space-y-4">
-              <div className="flex items-center justify-between">
+              
+              {/* Variants Form */}
+              <ProductVariantsForm
+                hasVariants={hasVariants}
+                onHasVariantsChange={setHasVariants}
+                variants={variants}
+                onVariantsChange={setVariants}
+                disabled={isSaving}
+                onValidationChange={setHasVariantErrors}
+              />
+              
+              <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="published"
@@ -410,7 +524,7 @@ export function ProductDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || hasVariantErrors}>
               {isSaving && 'Guardando...'}
               {!isSaving && (isEditing ? 'Actualizar' : 'Crear')}
             </Button>
