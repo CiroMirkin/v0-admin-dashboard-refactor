@@ -34,6 +34,18 @@ export interface ProductImage {
   created_at: string
 }
 
+export interface ProductVariant {
+  id: string
+  product_id: string
+  label: string
+  measure_value: string | null
+  price: number
+  stock: number
+  is_default: boolean
+  sort_order: number
+  created_at: string
+}
+
 export interface OrderItem {
   id: string
   order_id: string
@@ -86,4 +98,5 @@ export interface OrderWithCustomer extends Order {
 
 export interface ProductWithImages extends Product {
   images: ProductImage[]
+  variants: ProductVariant[]
 }
